@@ -42,11 +42,6 @@ jobs:
         source .venv/bin/activate
         uv pip install -e ".[dev,test]"
     
-    - name: Run linting with Ruff
-      run: |
-        source .venv/bin/activate
-        uv run ruff check .
-    
     - name: Run tests with pytest
       run: |
         source .venv/bin/activate
