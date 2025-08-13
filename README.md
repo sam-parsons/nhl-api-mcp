@@ -1,6 +1,13 @@
 # NHL API MCP Server (Scaffold)
 
-A Model Context Protocol (MCP) server scaffold for NHL data. This repository mirrors the setup of `mlb-api-mcp` (packaging, tooling, Docker, Smithery, entrypoint), but intentionally omits NHL implementation for now.
+[![CI](https://github.com/sam-parsons/nhl-api-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/sam-parsons/nhl-api-mcp/actions/workflows/ci.yml)
+[![Docker Hub](https://img.shields.io/docker/pulls/samparsons269/nhl-api-mcp.svg)](https://hub.docker.com/r/samparsons269/nhl-api-mcp)
+[![Docker Image Size](https://img.shields.io/docker/image-size/samparsons269/nhl-api-mcp/latest)](https://hub.docker.com/r/samparsons269/nhl-api-mcp)
+
+
+## 📦 Package Builds
+
+This project automatically builds Python packages on every push to main. Build artifacts are available in the [GitHub Actions](https://github.com/sam-parsons/nhl-api-mcp/actions) workflow.
 
 ## Installation (uv)
 
