@@ -1,0 +1,18 @@
+# Smithery configuration file
+runtime: "container"
+build:
+  dockerfile: "Dockerfile"
+  dockerBuildPath: "."
+
+startCommand:
+  type: "http"
+  configSchema:
+    type: object
+    required: []
+    properties:
+      logLevel:
+        type: string
+        default: INFO
+        description: Logging level for the MCP server (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  exampleConfig:
+    logLevel: INFO
