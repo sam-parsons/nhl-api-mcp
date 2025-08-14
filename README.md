@@ -43,12 +43,29 @@ docker run -p 8000:8000 nhl-api-mcp
 docker run -e TZ=America/New_York -p 8000:8000 nhl-api-mcp
 ```
 
+## MCP Configuration
+
+To use this MCP server with MCP clients (like Cursor), you'll need to create an `mcp.json` configuration file. Here's how to set it up for the Docker container:
+
+Create or edit an `mcp.json` file in your MCP client (ex: Cursor)'s configuration directory:
+
+```json
+{
+  "mcpServers": {
+    "nhl-api": {
+      "url": "http://localhost:8000/mcp/"
+    }
+  }
+}
+```
+
+After creating the configuration file, restart your MCP client to connect to the NHL API server.
+
 ## Development
 
 - Python 3.10+ (Docker uses Python 3.12)
-- FastMCP, FastAPI, uvicorn
+- FastMCP, uvicorn
 - uv for env/run, Hatchling for build
-- Ruff for linting
 
 Pre-commit (optional):
 ```bash
