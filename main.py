@@ -4,7 +4,6 @@ import warnings
 
 import uvicorn
 from fastmcp import FastMCP
-from fastapi import FastAPI
 from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware import Middleware
@@ -117,18 +116,6 @@ if __name__ == "__main__":
             max_age=86400,
         )
         app = mcp.http_app(middleware=[cors_middleware])
-
-        # Normalize /mcp to /mcp/ for Starlette Mount behavior
-        class MCPPathRedirect:
-            def __init__(self, app):
-                self.app = app
-            async def __call__(self, scope, receive, send):
-                if scope.get("type") == "http" and scope.get("path") == "/mcp":
-                    scope["path"] = "/mcp/"
-                    scope["raw_path"] = b"/mcp/"
-                await self.app(scope, receive, send)
-
-        app = MCPPathRedirect(app)
 
         uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
     else:
