@@ -16,6 +16,7 @@ class TestNHLAPI:
         """Test that NHL client is properly initialized"""
         assert client is not None
         assert hasattr(client, 'teams')
+        assert hasattr(client, 'standings')
     
     @patch('nhl_api.client.teams.teams')
     def test_get_nhl_teams_success(self, mock_teams):
@@ -186,6 +187,184 @@ class TestNHLAPI:
         # Verify the mock was called
         mock_teams.assert_called_once_with("now")
     
+    @patch('nhl_api.client.standings.league_standings')
+    def test_get_nhl_standings_success(self, mock_standings):
+        """Test successful retrieval of NHL standings"""
+        # Mock the standings response
+        mock_standings.return_value = {
+            "standings": [
+                {"team": "Boston Bruins", "points": 100, "wins": 45},
+                {"team": "Toronto Maple Leafs", "points": 95, "wins": 42}
+            ]
+        }
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_standings
+        result = get_nhl_standings()
+        
+        # Verify the result
+        assert "standings" in result
+        assert "standings" in result["standings"]
+        assert len(result["standings"]["standings"]) == 2
+        assert result["standings"]["standings"][0]["team"] == "Boston Bruins"
+        assert result["standings"]["standings"][1]["points"] == 95
+        
+        # Verify the mock was called with default parameter
+        mock_standings.assert_called_once_with("now")
+    
+    @patch('nhl_api.client.standings.league_standings')
+    def test_get_nhl_standings_with_date(self, mock_standings):
+        """Test successful retrieval of NHL standings with specific date"""
+        # Mock the standings response
+        mock_standings.return_value = {
+            "standings": [
+                {"team": "Boston Bruins", "points": 100, "wins": 45}
+            ]
+        }
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_standings
+        result = get_nhl_standings(date="2024-01-15")
+        
+        # Verify the result
+        assert "standings" in result
+        assert "standings" in result["standings"]
+        assert len(result["standings"]["standings"]) == 1
+        
+        # Verify the mock was called with the specified date
+        mock_standings.assert_called_once_with("2024-01-15")
+    
+    @patch('nhl_api.client.standings.league_standings')
+    @patch('nhl_api.get_nhl_season_manifest')
+    def test_get_nhl_standings_with_season(self, mock_season_manifest, mock_standings):
+        """Test successful retrieval of NHL standings with season parameter"""
+        # Mock the season manifest response
+        mock_season_manifest.return_value = {
+            "seasons": [
+                {
+                    "id": 20232024,
+                    "standingsEnd": "2024-04-18",
+                    "conferencesInUse": True,
+                    "divisionsInUse": True
+                }
+            ]
+        }
+        
+        # Mock the standings response
+        mock_standings.return_value = {
+            "standings": [
+                {"team": "Boston Bruins", "points": 100, "wins": 45}
+            ]
+        }
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_standings
+        result = get_nhl_standings(season="20232024")
+        
+        # Verify the result
+        assert "standings" in result
+        assert "standings" in result["standings"]
+        assert len(result["standings"]["standings"]) == 1
+        
+        # Verify the mock was called with the season end date
+        mock_standings.assert_called_once_with("2024-04-18")
+    
+    @patch('nhl_api.client.standings.league_standings')
+    @patch('nhl_api.get_nhl_season_manifest')
+    def test_get_nhl_standings_invalid_season(self, mock_season_manifest, mock_standings):
+        """Test error handling when invalid season is provided"""
+        # Mock the season manifest response with no matching season
+        mock_season_manifest.return_value = {
+            "seasons": [
+                {
+                    "id": 20232024,
+                    "standingsEnd": "2024-04-18"
+                }
+            ]
+        }
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_standings
+        result = get_nhl_standings(season="99999999")
+        
+        # Verify the error result
+        assert "error" in result
+        assert "Invalid Season Id 99999999" in result["error"]
+    
+    @patch('nhl_api.client.standings.league_standings')
+    def test_get_nhl_standings_error(self, mock_standings):
+        """Test error handling when standings API fails"""
+        # Mock the standings response to raise an exception
+        mock_standings.side_effect = Exception("Standings API error")
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_standings
+        result = get_nhl_standings()
+        
+        # Verify the error result
+        assert "error" in result
+        assert result["error"] == "Standings API error"
+    
+    @patch('nhl_api.client.standings.season_standing_manifest')
+    def test_get_nhl_season_manifest_success(self, mock_season_manifest):
+        """Test successful retrieval of NHL season manifest"""
+        # Mock the season manifest response
+        mock_season_manifest.return_value = [
+            {
+                "id": 20232024,
+                "conferencesInUse": True,
+                "divisionsInUse": True,
+                "pointForOTlossInUse": True,
+                "regulationWinsInUse": True,
+                "rowInUse": True,
+                "standingsEnd": "2024-04-18",
+                "standingsStart": "2023-10-10",
+                "tiesInUse": False,
+                "wildcardInUse": True
+            },
+            {
+                "id": 20242025,
+                "conferencesInUse": True,
+                "divisionsInUse": True,
+                "pointForOTlossInUse": True,
+                "regulationWinsInUse": True,
+                "rowInUse": True,
+                "standingsEnd": "2025-04-17",
+                "standingsStart": "2024-10-08",
+                "tiesInUse": False,
+                "wildcardInUse": True
+            }
+        ]
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_season_manifest
+        result = get_nhl_season_manifest()
+        
+        # Verify the result
+        assert "seasons" in result
+        assert len(result["seasons"]) == 2
+        assert result["seasons"][0]["id"] == 20232024
+        assert result["seasons"][0]["standingsEnd"] == "2024-04-18"
+        assert result["seasons"][1]["id"] == 20242025
+        assert result["seasons"][1]["standingsStart"] == "2024-10-08"
+        
+        # Verify the mock was called
+        mock_season_manifest.assert_called_once()
+    
+    @patch('nhl_api.client.standings.season_standing_manifest')
+    def test_get_nhl_season_manifest_error(self, mock_season_manifest):
+        """Test error handling when season manifest API fails"""
+        # Mock the season manifest response to raise an exception
+        mock_season_manifest.side_effect = Exception("Season manifest API error")
+        
+        # Test the function directly by importing and calling it
+        from nhl_api import get_nhl_season_manifest
+        result = get_nhl_season_manifest()
+        
+        # Verify the error result
+        assert "error" in result
+        assert result["error"] == "Season manifest API error"
+    
     def test_setup_nhl_tools_registers_all_tools(self):
         """Test that setup_nhl_tools properly registers all tools with MCP"""
         mock_mcp = Mock()
@@ -193,12 +372,12 @@ class TestNHLAPI:
         # Setup the tools
         setup_nhl_tools(mock_mcp)
         
-        # Verify that the tool decorator was called 4 times (4 tools total)
-        assert mock_mcp.tool.call_count == 4
+        # Verify that the tool decorator was called 6 times (6 tools total)
+        assert mock_mcp.tool.call_count == 6
         
         # Verify the tool names are registered
         tool_calls = mock_mcp.tool.call_args_list
-        assert len(tool_calls) == 4
+        assert len(tool_calls) == 6
 
 
 if __name__ == "__main__":
