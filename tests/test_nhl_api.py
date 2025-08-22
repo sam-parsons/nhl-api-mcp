@@ -582,15 +582,365 @@ class TestNHLAPI:
         
         mock_playoff_bracket.assert_called_once_with("2024")
     
+    # Stats API Tests
+    @patch('nhl_api.client.stats.gametypes_per_season_directory_by_team')
+    def test_get_nhl_gametypes_per_season_by_team_success(self, mock_gametypes):
+        mock_gametypes.return_value = [
+            {'season': 20242025, 'gameTypes': [2]},
+            {'season': 20232024, 'gameTypes': [2, 3]},
+            {'season': 20222023, 'gameTypes': [2, 3]}
+        ]
+        
+        from nhl_api import get_nhl_gametypes_per_season_by_team
+        result = get_nhl_gametypes_per_season_by_team("TOR")
+        
+        assert "gametypes" in result
+        assert len(result["gametypes"]) == 3
+        assert result["gametypes"][0]["season"] == 20242025
+        assert result["gametypes"][1]["gameTypes"] == [2, 3]
+        
+        mock_gametypes.assert_called_once_with("TOR")
+    
+    @patch('nhl_api.client.stats.gametypes_per_season_directory_by_team')
+    def test_get_nhl_gametypes_per_season_by_team_error(self, mock_gametypes):
+        mock_gametypes.side_effect = Exception("Team not found")
+        
+        from nhl_api import get_nhl_gametypes_per_season_by_team
+        result = get_nhl_gametypes_per_season_by_team("INVALID")
+        
+        assert "error" in result
+        assert result["error"] == "Team not found"
+    
+    @patch('nhl_api.client.stats.player_career_stats')
+    def test_get_nhl_player_career_stats_success(self, mock_player_stats):
+        mock_player_stats.return_value = {
+            'playerId': 8478402,
+            'isActive': True,
+            'currentTeamId': 22,
+            'currentTeamAbbrev': 'EDM',
+            'fullTeamName': {'default': 'Edmonton Oilers', 'fr': "Oilers d'Edmonton"},
+            'firstName': {'default': 'Connor'},
+            'lastName': {'default': 'McDavid'},
+            'sweaterNumber': 97,
+            'position': 'C'
+        }
+        
+        from nhl_api import get_nhl_player_career_stats
+        result = get_nhl_player_career_stats("8478402")
+        
+        assert "player_stats" in result
+        assert result["player_stats"]["playerId"] == 8478402
+        assert result["player_stats"]["firstName"]["default"] == "Connor"
+        assert result["player_stats"]["lastName"]["default"] == "McDavid"
+        assert result["player_stats"]["position"] == "C"
+        
+        mock_player_stats.assert_called_once_with("8478402")
+    
+    @patch('nhl_api.client.stats.player_career_stats')
+    def test_get_nhl_player_career_stats_error(self, mock_player_stats):
+        mock_player_stats.side_effect = Exception("Player not found")
+        
+        from nhl_api import get_nhl_player_career_stats
+        result = get_nhl_player_career_stats("9999999")
+        
+        assert "error" in result
+        assert result["error"] == "Player not found"
+    
+    @patch('nhl_api.client.stats.player_game_log')
+    def test_get_nhl_player_game_log_success(self, mock_game_log):
+        mock_game_log.return_value = [
+            {
+                'gameId': 2024020641,
+                'teamAbbrev': 'EDM',
+                'homeRoadFlag': 'R',
+                'gameDate': '2025-01-07',
+                'goals': 1,
+                'assists': 0,
+                'points': 1,
+                'plusMinus': 0,
+                'shots': 5,
+                'toi': '18:04'
+            },
+            {
+                'gameId': 2024020642,
+                'teamAbbrev': 'EDM',
+                'homeRoadFlag': 'H',
+                'gameDate': '2025-01-09',
+                'goals': 0,
+                'assists': 2,
+                'points': 2,
+                'plusMinus': 1,
+                'shots': 3,
+                'toi': '19:15'
+            }
+        ]
+        
+        from nhl_api import get_nhl_player_game_log
+        result = get_nhl_player_game_log("8478402", "20242025", 2)
+        
+        assert "game_log" in result
+        assert len(result["game_log"]) == 2
+        assert result["game_log"][0]["goals"] == 1
+        assert result["game_log"][0]["assists"] == 0
+        assert result["game_log"][1]["goals"] == 0
+        assert result["game_log"][1]["assists"] == 2
+        
+        mock_game_log.assert_called_once_with("8478402", "20242025", 2)
+    
+    @patch('nhl_api.client.stats.player_game_log')
+    def test_get_nhl_player_game_log_error(self, mock_game_log):
+        mock_game_log.side_effect = Exception("Game log not found")
+        
+        from nhl_api import get_nhl_player_game_log
+        result = get_nhl_player_game_log("8478402", "20242025", 2)
+        
+        assert "error" in result
+        assert result["error"] == "Game log not found"
+    
+    @patch('nhl_api.client.stats.team_summary')
+    def test_get_nhl_team_summary_stats_success(self, mock_team_summary):
+        mock_team_summary.return_value = [
+            {
+                'faceoffWinPct': 0.48235,
+                'gamesPlayed': 82,
+                'goalsAgainst': 242,
+                'goalsAgainstPerGame': 2.95121,
+                'goalsFor': 337,
+                'goalsForPerGame': 4.10975,
+                'losses': 18,
+                'otLosses': 6,
+                'points': 122,
+                'wins': 58,
+                'teamFullName': 'Florida Panthers',
+                'teamId': 13,
+                'seasonId': 20212022
+            }
+        ]
+        
+        from nhl_api import get_nhl_team_summary_stats
+        result = get_nhl_team_summary_stats("20202021", "20212022", 2)
+        
+        assert "team_summary" in result
+        assert len(result["team_summary"]) == 1
+        assert result["team_summary"][0]["teamFullName"] == "Florida Panthers"
+        assert result["team_summary"][0]["points"] == 122
+        assert result["team_summary"][0]["wins"] == 58
+        
+        mock_team_summary.assert_called_once_with(
+            start_season="20202021",
+            end_season="20212022",
+            game_type_id=2,
+            is_game=False,
+            is_aggregate=False,
+            start=0,
+            limit=50
+        )
+    
+    @patch('nhl_api.client.stats.team_summary')
+    def test_get_nhl_team_summary_stats_with_custom_params(self, mock_team_summary):
+        mock_team_summary.return_value = []
+        
+        from nhl_api import get_nhl_team_summary_stats
+        result = get_nhl_team_summary_stats(
+            "20202021", "20212022", 3, True, True, 10, 25
+        )
+        
+        assert "team_summary" in result
+        
+        mock_team_summary.assert_called_once_with(
+            start_season="20202021",
+            end_season="20212022",
+            game_type_id=3,
+            is_game=True,
+            is_aggregate=True,
+            start=10,
+            limit=25
+        )
+    
+    @patch('nhl_api.client.stats.team_summary')
+    def test_get_nhl_team_summary_stats_error(self, mock_team_summary):
+        mock_team_summary.side_effect = Exception("Team summary API error")
+        
+        from nhl_api import get_nhl_team_summary_stats
+        result = get_nhl_team_summary_stats("20202021", "20212022")
+        
+        assert "error" in result
+        assert result["error"] == "Team summary API error"
+    
+    @patch('nhl_api.client.stats.skater_stats_summary')
+    def test_get_nhl_skater_stats_summary_success(self, mock_skater_stats):
+        mock_skater_stats.return_value = [
+            {
+                'assists': 71,
+                'evGoals': 38,
+                'evPoints': 75,
+                'faceoffWinPct': 0.1,
+                'gameWinningGoals': 5,
+                'gamesPlayed': 82,
+                'goals': 49,
+                'lastName': 'Panarin',
+                'otGoals': 1,
+                'penaltyMinutes': 24,
+                'playerId': 8478550,
+                'plusMinus': 18,
+                'points': 120,
+                'pointsPerGame': 1.46341,
+                'positionCode': 'L',
+                'ppGoals': 11,
+                'ppPoints': 44,
+                'seasonId': 20232024,
+                'shGoals': 0,
+                'shPoints': 1,
+                'shootingPct': 0.16171,
+                'shootsCatches': 'R',
+                'shots': 303,
+                'skaterFullName': 'Artemi Panarin',
+                'teamAbbrevs': 'NYR',
+                'timeOnIcePerGame': 1207.1341
+            }
+        ]
+        
+        from nhl_api import get_nhl_skater_stats_summary
+        result = get_nhl_skater_stats_summary("20232024", "20232024")
+        
+        assert "skater_stats" in result
+        assert len(result["skater_stats"]) == 1
+        assert result["skater_stats"][0]["skaterFullName"] == "Artemi Panarin"
+        assert result["skater_stats"][0]["points"] == 120
+        assert result["skater_stats"][0]["goals"] == 49
+        assert result["skater_stats"][0]["assists"] == 71
+        
+        mock_skater_stats.assert_called_once_with(
+            start_season="20232024",
+            end_season="20232024",
+            franchise_id=None,
+            game_type_id=2,
+            aggregate=False,
+            start=0,
+            limit=25
+        )
+    
+    @patch('nhl_api.client.stats.skater_stats_summary')
+    def test_get_nhl_skater_stats_summary_with_franchise(self, mock_skater_stats):
+        mock_skater_stats.return_value = []
+        
+        from nhl_api import get_nhl_skater_stats_summary
+        result = get_nhl_skater_stats_summary("20232024", "20232024", "10", 3, True, 5, 15)
+        
+        assert "skater_stats" in result
+        
+        mock_skater_stats.assert_called_once_with(
+            start_season="20232024",
+            end_season="20232024",
+            franchise_id="10",
+            game_type_id=3,
+            aggregate=True,
+            start=5,
+            limit=15
+        )
+    
+    @patch('nhl_api.client.stats.skater_stats_summary')
+    def test_get_nhl_skater_stats_summary_error(self, mock_skater_stats):
+        mock_skater_stats.side_effect = Exception("Skater stats API error")
+        
+        from nhl_api import get_nhl_skater_stats_summary
+        result = get_nhl_skater_stats_summary("20232024", "20232024")
+        
+        assert "error" in result
+        assert result["error"] == "Skater stats API error"
+    
+    @patch('nhl_api.client.stats.goalie_stats_summary')
+    def test_get_nhl_goalie_stats_summary_success(self, mock_goalie_stats):
+        mock_goalie_stats.return_value = [
+            {
+                'assists': 0,
+                'gamesPlayed': 33,
+                'gamesStarted': 33,
+                'goalieFullName': 'Connor Hellebuyck',
+                'goals': 0,
+                'goalsAgainst': 69,
+                'goalsAgainstAverage': 2.08485,
+                'lastName': 'Hellebuyck',
+                'losses': 6,
+                'otLosses': 2,
+                'penaltyMinutes': 0,
+                'playerId': 8476945,
+                'points': 0,
+                'savePct': 0.92612,
+                'saves': 865,
+                'seasonId': 20242025,
+                'shootsCatches': 'L',
+                'shotsAgainst': 934,
+                'shutouts': 5,
+                'teamAbbrevs': 'WPG',
+                'ties': None,
+                'timeOnIce': 119145,
+                'wins': 25
+            }
+        ]
+        
+        from nhl_api import get_nhl_goalie_stats_summary
+        result = get_nhl_goalie_stats_summary("20242025", "20242025", "summary", 2)
+        
+        assert "goalie_stats" in result
+        assert len(result["goalie_stats"]) == 1
+        assert result["goalie_stats"][0]["goalieFullName"] == "Connor Hellebuyck"
+        assert result["goalie_stats"][0]["wins"] == 25
+        assert result["goalie_stats"][0]["savePct"] == 0.92612
+        assert result["goalie_stats"][0]["shutouts"] == 5
+        
+        mock_goalie_stats.assert_called_once_with(
+            start_season="20242025",
+            end_season="20242025",
+            stats_type="summary",
+            game_type_id=2,
+            franchise_id=None,
+            aggregate=False,
+            start=0,
+            limit=25
+        )
+    
+    @patch('nhl_api.client.stats.goalie_stats_summary')
+    def test_get_nhl_goalie_stats_summary_with_custom_params(self, mock_goalie_stats):
+        mock_goalie_stats.return_value = []
+        
+        from nhl_api import get_nhl_goalie_stats_summary
+        result = get_nhl_goalie_stats_summary(
+            "20242025", "20232024", "advanced", 3, "10", True, 5, 15
+        )
+        
+        assert "goalie_stats" in result
+        
+        mock_goalie_stats.assert_called_once_with(
+            start_season="20242025",
+            end_season="20232024",
+            stats_type="advanced",
+            game_type_id=3,
+            franchise_id="10",
+            aggregate=True,
+            start=5,
+            limit=15
+        )
+    
+    @patch('nhl_api.client.stats.goalie_stats_summary')
+    def test_get_nhl_goalie_stats_summary_error(self, mock_goalie_stats):
+        mock_goalie_stats.side_effect = Exception("Goalie stats API error")
+        
+        from nhl_api import get_nhl_goalie_stats_summary
+        result = get_nhl_goalie_stats_summary("20242025")
+        
+        assert "error" in result
+        assert result["error"] == "Goalie stats API error"
+    
     def test_setup_nhl_tools_registers_all_tools(self):
         mock_mcp = Mock()
         
         setup_nhl_tools(mock_mcp)
         
-        assert mock_mcp.tool.call_count == 17
+        assert mock_mcp.tool.call_count == 23  # Updated count to include new Stats API tools
         
         tool_calls = mock_mcp.tool.call_args_list
-        assert len(tool_calls) == 17
+        assert len(tool_calls) == 23
 
 
 if __name__ == "__main__":
