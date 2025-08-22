@@ -102,6 +102,66 @@ class TestNHLAPI:
         assert "error" in result
         assert result["error"] == "Team not found"
     
+    @patch('nhl_api.client.players.prospects_by_team')
+    def test_get_nhl_prospects_by_team_success(self, mock_prospects):
+        mock_prospects.return_value = {
+            "prospects": [
+                {"id": 1, "name": "Connor Bedard", "position": "C", "draftYear": 2023},
+                {"id": 2, "name": "Adam Fantilli", "position": "C", "draftYear": 2023}
+            ]
+        }
+        
+        from nhl_api import get_nhl_prospects_by_team
+        result = get_nhl_prospects_by_team(team_abbr="CHI")
+        
+        assert "prospects" in result
+        assert "prospects" in result["prospects"]
+        assert len(result["prospects"]["prospects"]) == 2
+        assert result["prospects"]["prospects"][0]["name"] == "Connor Bedard"
+        assert result["prospects"]["prospects"][1]["position"] == "C"
+        
+        mock_prospects.assert_called_once_with("CHI")
+    
+    @patch('nhl_api.client.players.prospects_by_team')
+    def test_get_nhl_prospects_by_team_error(self, mock_prospects):
+        mock_prospects.side_effect = Exception("Prospects API error")
+        
+        from nhl_api import get_nhl_prospects_by_team
+        result = get_nhl_prospects_by_team(team_abbr="INVALID")
+        
+        assert "error" in result
+        assert result["error"] == "Prospects API error"
+    
+    @patch('nhl_api.client.players.players_by_team')
+    def test_get_nhl_players_by_team_success(self, mock_players):
+        mock_players.return_value = {
+            "roster": [
+                {"id": 1, "name": "Jack Hughes", "position": "C", "number": "86"},
+                {"id": 2, "name": "Nico Hischier", "position": "C", "number": "13"}
+            ]
+        }
+        
+        from nhl_api import get_nhl_players_by_team
+        result = get_nhl_players_by_team(team_abbr="NJD", season="20232024")
+        
+        assert "players" in result
+        assert "roster" in result["players"]
+        assert len(result["players"]["roster"]) == 2
+        assert result["players"]["roster"][0]["name"] == "Jack Hughes"
+        assert result["players"]["roster"][1]["position"] == "C"
+        
+        mock_players.assert_called_once_with("NJD", "20232024")
+    
+    @patch('nhl_api.client.players.players_by_team')
+    def test_get_nhl_players_by_team_error(self, mock_players):
+        mock_players.side_effect = Exception("Players API error")
+        
+        from nhl_api import get_nhl_players_by_team
+        result = get_nhl_players_by_team(team_abbr="INVALID", season="20232024")
+        
+        assert "error" in result
+        assert result["error"] == "Players API error"
+    
     @patch('nhl_api.client.teams.franchises')
     def test_get_nhl_franchises_success(self, mock_franchises):
         mock_franchises.return_value = [
@@ -527,10 +587,10 @@ class TestNHLAPI:
         
         setup_nhl_tools(mock_mcp)
         
-        assert mock_mcp.tool.call_count == 15
+        assert mock_mcp.tool.call_count == 17
         
         tool_calls = mock_mcp.tool.call_args_list
-        assert len(tool_calls) == 15
+        assert len(tool_calls) == 17
 
 
 if __name__ == "__main__":
