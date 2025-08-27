@@ -65,8 +65,6 @@ known-first-party = ["nhl_api_mcp"]
 "main.py" = ["E501", "W293"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 # Keep coverage wired like MLB, but with threshold 0 until tests exist.
 # Raise to 80 later.
