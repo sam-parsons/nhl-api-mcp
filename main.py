@@ -8,7 +8,7 @@ from starlette.responses import HTMLResponse, JSONResponse, RedirectResponse
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware import Middleware
 
-from nhl_api import setup_nhl_tools
+from src import setup_nhl_tools
 
 # Suppress websockets deprecation warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="websockets")
